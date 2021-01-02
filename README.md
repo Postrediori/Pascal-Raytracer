@@ -1,6 +1,6 @@
 ## Description
 
-This repository contains two raytracer programs written in [Turbo Pascal](https://en.wikipedia.org/wiki/Turbo_Pascal) for MS-DOS:  and 
+This repository contains raytracer programs written in [Turbo Pascal](https://en.wikipedia.org/wiki/Turbo_Pascal) for MS-DOS.
 
 1) Text mode (default is 80x25)
 ![Screenshot of text mode raytracer](RaytracerTxt.png)
@@ -8,13 +8,16 @@ This repository contains two raytracer programs written in [Turbo Pascal](https:
 2) Graphics mode (640x480)
 ![Screenshot of graphics mode raytracer](RaytracerVga.png)
 
-The algorithm is based on the BASIC programs for BBC Micro by [Steve McCrea](https://twitter.com/Kweepa).
- 
 Scene parameters are the following:
 * Rays start at (0, 0.23, -2)
 * Sphere of radius 1 is placed at the origin
 * Floor plane is at Y=-2
 
+3) More complex raytracer with two sphere bjects and multiple reflections
+![Screenshot of multiple objects raytracer](RaytracerPair.png)
+
+The algorithm is based on the BASIC programs for BBC Micro by [Steve McCrea](https://twitter.com/Kweepa).
+ 
 
 ## Text mode raytracer
 
@@ -96,6 +99,7 @@ Put current 'pixel' to position U,V. Since enumeration is sequential, just put w
       Write(' ');
 ```
 
+
 ## Graphics mode raytracer
 
 Full source code: [RTVGA.PAS](RTVGA.PAS)
@@ -109,9 +113,68 @@ const
 ```
 
 
+## More complex raytracer with a pair of spheres
+
+Full source code: [RTPAIR.PAS](RTPAIR.PAS)
+
+This program displays a scene with two spheres and simulates multiple reflections of a ray before it reaches the ground or floor. This creates complex patterns on the surfaces of the spheres.
+
+The following new code is added to the previous VGA graphics mode program. I is the horizontal direction of ray based on whether it is in left (`U<0`) or right (`U>0`) half of the screen.
+```pascal
+      I := Sign(U);
+      G := 1;
+```
+
+Start the reflection cycle. A ray may reflect between one sphere and another multiple times before hitting floor or sky.
+```pascal
+      repeat
+        stopReflection := True;
+		...
+      until stopReflection;
+```
+
+Check condition if a ray reflects from a sphere one more time.
+```pascal
+        if D>0 then
+        begin
+          T := -P - Sqrt(D);
+          if T>0 then
+          begin
+		    ...
+		  end;
+		end;
+```
+
+Invert ray's direction and continue the reflection cycle.
+```pascal
+            I := -I;
+            stopReflection := False;
+```
+
+If `Y<0` (`V<0`) rays hit the floor. Display checkers floor with Black (0) and Red (4) tiles with the help of grid formula `(1 And (Round(X - U*P) + Round(Z + W*P)))`:
+```pascal
+      if V<0 then
+      begin
+        P := (Y+2)/V;
+        C := (1 And (Round(X - U*P) + Round(Z + W*P))) * 4;
+	  end
+```
+
+If Y>0 (V>0) rays hit the sky, Default sky color is Cyan (11). Additional condition (`V<R`) is added to create fancy Cyan-White horizon adjusted by the curve `0.2+0.1*Cos(3*R)*Abs(Sin(5*R))`:
+```pascal
+        C := 11;
+        R := ArcTan(U/W);
+        R := 0.2+0.1*Cos(3*R)*Abs(Sin(5*R));
+        if Abs(G)<0.35 then
+          R := R + 1;
+        if V<R then
+          C := 15;
+```
+
+
 ## Links
 * Tweets by Steve McCrea:
- * [Text mode raytracer](https://twitter.com/Kweepa/status/1305994537375092736)
- * [Graphics mode raytracer](https://twitter.com/Kweepa/status/1305995378660179969)
- * [Annotated graphics raytracer](https://twitter.com/Kweepa/status/1306006615691333640)
- 
+  * [Text mode raytracer](https://twitter.com/Kweepa/status/1305994537375092736)
+  * [Graphics mode raytracer](https://twitter.com/Kweepa/status/1305995378660179969)
+  * [Annotated graphics raytracer](https://twitter.com/Kweepa/status/1306006615691333640)
+  * [Pair of spheres raytracer](https://twitter.com/bbcmicrobot/status/1324145479421202433)
